@@ -16,4 +16,8 @@ let finalizar carrito = (*aca hay que verificar que el carrito no se lleve mas p
 
 let solicitar = (* aca hay que retornar el contenido del carrito y sumar el monto total de la compra *)
 
-
+let _  =
+  let carrito = [] in
+  let productos = [1;2;3] in
+  let cantidades = [1;2;3] in
+  let precios = [1;2;3] in
