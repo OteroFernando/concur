@@ -62,7 +62,7 @@ let rec sumar_en_carrito carrito pedido =
 let rec restar_en_catalogo catalogo pedido = 
 	match catalogo with
 	| [] -> []
-	| (id, cant, precio) :: xs -> 
+	| ((id, cant), precio) :: xs -> 
 		match pedido with
 		| [] -> ((id, cant), precio) :: restar_en_catalogo xs pedido
 		| (id2, cant2) :: ys -> if id = id2 then 
