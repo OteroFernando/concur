@@ -10,7 +10,7 @@ module S = Session.Bare
 let print_list f lst =
   let rec print_elements = function
     | [] -> ()
-    | (a,b)::t -> print_string "("; f a; print_string ")"; print_string ";"; print_elements t
+    | (a,b)::t -> print_string "("; f a; print_string ","; f b; print_string ")"; print_string ";"; print_elements t
   in
   print_string "[";
   print_elements lst;
@@ -35,14 +35,14 @@ let rec find2 lista elem =
 let rec verif_pedido catalogo pedido = 
 	match pedido with
     | [] -> true
-    | (id, cant) :: xs -> let ((a,b),c) = find2 catalogo id in
+    | (id, cant) :: xs -> let ((_,b),_) = find2 catalogo id in
     						if b  >= cant then (* List.find (s -> cond) catalogo devuelve el elemento s en la lista catalogo si lo encuentra *)
     						verif_pedido catalogo xs else false
 
 let rec devolver_disponibles catalogo pedido = 
 	match pedido with
 	| [] -> []
-	| (id, cant) :: xs -> let ((a,b),c) = find2 catalogo id in
+	| (id, _) :: xs -> let ((_,b),_) = find2 catalogo id in
 							(id, b) :: devolver_disponibles catalogo xs			
 
 let rec sumar_en_carrito carrito pedido = 
@@ -74,14 +74,14 @@ let rec restar_en_catalogo catalogo pedido =
 let rec solicitar catalogo carrito = 
 	match carrito with
 	| [] -> 0
-	| (id, cant) :: xs -> let ((a,b),c) = find2 catalogo id in
+	| (id, cant) :: xs -> let (_,c) = find2 catalogo id in
 							cant*c + solicitar catalogo xs	
 
 (* auxiliar de avandonar*)
 let rec anular_carrito catalogo carrito = 
 	match catalogo with
 	| [] -> []
-	| ((id, cant), precio) :: xs -> 
+	| ((id, cant), _) :: xs -> 
 		match carrito with
 		| [] -> (id, cant) :: anular_carrito xs carrito
 		| (id2, cant2) :: ys -> if id = id2 then (id, cant + cant2) :: anular_carrito xs  ys	(* asumo ambas listas ordenadas, sino no funca ni a palos *)
@@ -110,7 +110,7 @@ let rec diferencia carrito producto =
 let rec devolver_a_catalogo catalogo carrito producto = 
 	match catalogo with
 	| [] -> []
-	| ((id, cant), precio) :: xs -> let (a,b) = producto in
+	| ((id, cant), _) :: xs -> let (a,_) = producto in
 							if a = id then 
 								let d = diferencia carrito producto in
 								(id, cant + d) :: devolver_a_catalogo xs carrito producto
@@ -120,7 +120,7 @@ let rec devolver_a_catalogo catalogo carrito producto =
 let rec cobrar catalogo carrito = 
 	match carrito with
     | [] -> true
-    | (id, cant) :: xs -> let ((a,b),c) = find2 catalogo id in
+    | (id, cant) :: xs -> let ((_,b),_) = find2 catalogo id in
     						if b  >= cant then 
     						cobrar catalogo xs else false
 
@@ -231,7 +231,7 @@ let client s =
 	let s = S.send cat s in
 	let s = S.send carr s in
 
-	let res = S.receive s in
+	let res, s = S.receive s in
 	print_int res;
 
 	print_newline();
