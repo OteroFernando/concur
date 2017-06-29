@@ -174,7 +174,7 @@ let rec server s =
 	       let s = S.send (quitar_carrito m q) s in
 	       (* enviar s a client() *)
 		    server s
-
+(*
 	(*aca hay que verificar que el carrito no se lleve mas plata de la que tiene en productos, para esto hay que recorrer la lista y sumar los precios * cantidad *)
 	| `Finalizar1 s -> let n, s = S.receive s in
 	       	let m, s = S.receive s in
@@ -186,7 +186,7 @@ let rec server s =
 				(* fallo la transaccion, reintentar? *)
 				let s = S.send (-1) s in
 		    	server s
-
+*)
 
 
 (* aca simulamos el cliente, y hacemos q llame al servidor con los distintos datos "hardcodeados". Como si el cliente lo recibiera de la persona. *)
@@ -214,13 +214,14 @@ let client s =
 	let s = S.select (fun x -> `Solicitar x) s in (* select `Solicitar operation *)
 	let s = S.send cat s in
 	let s = S.send carr s in
-
+(*
 	let s = S.select (fun x -> `Finalizar1 x) s in (* select `Finalizar1 operation *)
 	let s = S.send cat s in
 	let s = S.send carr s in
 
 	let res = S.receive s in
 	print_int res;
+*)
 	print_newline();
 	S.close s;
 	8
