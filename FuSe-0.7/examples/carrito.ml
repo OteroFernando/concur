@@ -1,14 +1,3 @@
-(* IDEAS SUELTAS: 
-	[5; 4; 3; 2; 1] esto es una lista 
-	las tuplas se declaran = ("larry", 47, 165, ’M’) 
-	el tp lo podemos hacer con tres listas(producto,precio,cantidad) para evitar la tupla, pero como quieras.. 
-	no se hacer pi1, la recursion en las listas es como haskell  1 :: (2 :: (3 :: (4 :: (5 :: [])))) 
-	aparentemente existen funciones de lista del estilo List.sort , 
-	dejo algunos links interesantes: https://cseweb.ucsd.edu/classes/wi11/cse130/discussion/ocaml-intro2.pdf aca hay links sobre listas y tuplas en ocaml. 
-	Aparentemente no se pueden declarar variables globales y si se puede no se como hacerlo, sugiero que desde el main creemos las dos listas o la lista 
-	de tuplas (yo prefiero dos listas). 
-	el let se corre una vez, el let rec es recursivo.    *)
-
 (*
 	Tipos:
 	catalogo es una lista de 3-upla id,cant,precio
@@ -28,12 +17,14 @@ let print_list f lst =
   print_string "]";;
 
 let rec aux_catalogo i n catalogo =
-	Random.init(Unix.time ());
-	(i, Random.int n +1, Random.int n +1) :: catalogo;
-	if i > 0 then aux_catalogo i-1 n catalogo
+	Random.init(n);
+	if i < n then 
+	let a = (i, (Random.int n) +1, (Random.int n) +1) in
+	a :: aux_catalogo (i+1) n catalogo
+ 	else []
 
 let crear_catalogo n = 
-	aux_catalogo n n []
+	aux_catalogo 0 n []
 
 let rec find2 lista elem =
 	match lista with
@@ -73,10 +64,12 @@ let rec restar_en_catalogo catalogo pedido =
 	| [] -> []
 	| (id, cant, precio) :: xs -> 
 		match pedido with
-		| [] -> (id, cant) :: restar_en_catalogo xs pedido
-		| (id2, cant2) :: ys -> if id = id2 then (id, cant - cant2) :: restar_en_catalogo xs  ys	(* asumo ambas listas ordenadas, sino no funca ni a palos *)
+		| [] -> (id, cant, precio) :: restar_en_catalogo xs pedido
+		| (id2, cant2) :: ys -> if id = id2 then 
+			let a = (id, cant - cant2, precio) in
+			a :: restar_en_catalogo xs  ys	(* asumo ambas listas ordenadas, sino no funca ni a palos *)
 			else
-				(id, cant2) :: restar_en_catalogo xs pedido
+				(id, cant2, precio) :: restar_en_catalogo xs pedido
 (* auxiliar de solicitar *)
 let rec solicitar catalogo carrito = 
 	match carrito with
@@ -133,7 +126,7 @@ let rec cobrar catalogo carrito =
 
 
 
-
+(* FUNCIONES PRINCIPALES *)
 let rec server s =	
  	match S.branch s with
   	(* Recibimos catalogo, carrito y pedido. Verificamos que las cantidades del pedido puedan satisfacerse, agregamos esas cantidades al carrito y 
@@ -195,6 +188,7 @@ let rec server s =
 		    	server s
 
 
+
 (* aca simulamos el cliente, y hacemos q llame al servidor con los distintos datos "hardcodeados". Como si el cliente lo recibiera de la persona. *)
 let client s =
 	let s = S.select (fun x -> `Pedir x) s in (* select `Pedir operation *)
@@ -227,8 +221,9 @@ let client s =
 
 	let res = S.receive s in
 	print_int res;
-	print_newline()
+	print_newline();
 	S.close s;
+	8
 
 
 let _ =
@@ -236,3 +231,6 @@ let _ =
 	let _ = Thread.create client a in
  	print_int (client b);
   	print_newline()
+
+
+
