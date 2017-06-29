@@ -62,7 +62,7 @@ let rec sumar_en_carrito carrito pedido =
 let rec restar_en_catalogo catalogo pedido = 
 	match catalogo with
 	| [] -> []
-	| (id, cant, precio) :: xs -> 
+	| ((id, cant), precio) :: xs -> 
 		match pedido with
 		| [] -> ((id, cant), precio) :: restar_en_catalogo xs pedido
 		| (id2, cant2) :: ys -> if id = id2 then 
@@ -181,12 +181,12 @@ let rec server s =
 	       	let r = Random.bool () in
 	       	if r = true then
 	   	    	let s = S.send (solicitar n m) s in
-	      	    S.close s
+	      	    let s = S.select (fun x -> `Salir x) s in
 		    else
 				(* fallo la transaccion, reintentar? *)
 				let s = S.send (-1) s in
 		    	server s
-
+	| `Salir s -> let n, s = S.receive s in
 
 
 (* aca simulamos el cliente, y hacemos q llame al servidor con los distintos datos "hardcodeados". Como si el cliente lo recibiera de la persona. *)

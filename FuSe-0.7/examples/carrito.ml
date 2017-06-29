@@ -181,12 +181,12 @@ let rec server s =
 	       	let r = Random.bool () in
 	       	if r = true then
 	   	    	let s = S.send (solicitar n m) s in
-	      	    S.close s
+	      	    let s = S.select (fun x -> `Salir x) s in
 		    else
 				(* fallo la transaccion, reintentar? *)
 				let s = S.send (-1) s in
 		    	server s
-
+	| `Salir s -> S.close s
 
 
 (* aca simulamos el cliente, y hacemos q llame al servidor con los distintos datos "hardcodeados". Como si el cliente lo recibiera de la persona. *)
