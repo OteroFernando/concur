@@ -130,7 +130,7 @@ let rec ultimo s =
 	      	    	let s = S.select (fun x -> `Salir x) s in
 	      	    	S.close s
 		    else
-			let s = S.select (fun x -> `Fallo x) s
+				S.select (fun x -> `Fallo x) s
 	      	    	
 		    	 
 
