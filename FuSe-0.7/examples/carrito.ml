@@ -133,7 +133,7 @@ let rec server s =	(* SIEMPRE LE PASO AL SERVER 1ro catalogo 2do carrito luego l
 		       server s
 		   else 
 		   		let s = S.send (restar_en_catalogo n p) s in (* devuelvo el catalogo modificado y el carrito modificado *)
-		       	let s = S.send (sumar_en_carrito m p) s in 
+		       (*	let s = S.send (sumar_en_carrito m p) s in *)
 		       (* enviar s a client() *)
 		       server s
 	
@@ -162,10 +162,13 @@ let rec server s =	(* SIEMPRE LE PASO AL SERVER 1ro catalogo 2do carrito luego l
 	(*aca hay que verificar que el carrito no se lleve mas plata de la que tiene en productos, para esto hay que recorrer la lista y sumar los precios * cantidad *)
 	| `Finalizar1 s -> let n, s = S.receive s in
 	       let m, s = S.receive s in
-	       let s = S.send (solicitar n m) s in 	(* falta q si falla la transaccion, no cierre el vinculo *)
-	       S.close s
-
-
+               let r = Random.bool () in
+               if r = false then
+	       	    let s = S.send (solicitar n m) s in 	(* falta q si falla la transaccion, no cierre el vinculo *)
+	      	    S.close s
+   	       else
+			(* fallo la transaccion, reintentar? *)
+		    server s
 
 (* aca simulamos el cliente, y hacemos q llame al servidor con los distintos datos "hardcodeados". Como si el cliente lo recibiera de la persona. *)
 let client s x y =
