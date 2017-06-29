@@ -124,6 +124,20 @@ let rec cobrar catalogo carrito =
     						if b  >= cant then 
     						cobrar catalogo xs else false
 
+let ultimo s =
+		let n, s = S.receive s in
+	       	let m, s = S.receive s in
+	       	let r = Random.bool () in
+	       	if r = true then
+	   	    	let s = S.send (solicitar n m) s in
+	      	    	let s = S.select (fun x -> `Salir x) s in
+	      	    	S.close s;
+		    else
+			(* fallo la transaccion, reintentar? *)
+			let s = S.select (fun x -> `Finalizar x) s in
+		    	
+
+
 
 
 (* FUNCIONES PRINCIPALES *)
