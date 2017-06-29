@@ -10,7 +10,7 @@ module S = Session.Bare
 let print_list f lst =
   let rec print_elements = function
     | [] -> ()
-    | h::t -> f h; print_string ";"; print_elements t
+    | (a,b)::t -> print_string "("; f a; print_string ")"; print_string ";"; print_elements t
   in
   print_string "[";
   print_elements lst;
@@ -145,7 +145,7 @@ let rec server s =
 		   else 
 		   		let t = restar_en_catalogo n p in
 		   		let s = S.send t s in (* devuelvo el catalogo modificado y el carrito modificado *)
-		       (*	let s = S.send (sumar_en_carrito m p) s in *)
+		        let s = S.send (sumar_en_carrito m p) s in
 		       (* enviar s a client() *)
 		       server s
 	
@@ -153,7 +153,7 @@ let rec server s =
 	| `Solicitar s -> let n, s = S.receive s in
 	       let m, s = S.receive s in
 	       let r = (solicitar n m) in
-	       print_list m;
+	       print_list print_int m;
 	       print_int r;
 	       (*
 	       let s = S.send r s in
@@ -184,7 +184,7 @@ let rec server s =
 	      	    S.close s
 		    else
 				(* fallo la transaccion, reintentar? *)
-				let s = S.send -1 s in
+				let s = S.send (-1) s in
 		    	server s
 
 
