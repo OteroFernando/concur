@@ -124,16 +124,6 @@ let rec cobrar catalogo carrito =
     						if b  >= cant then 
     						cobrar catalogo xs else false
 
-let rec ultimo s =
-	       	let r = Random.bool () in
-	       	if r = true then
-	      	    	let s = S.select (fun x -> `Salir x) s in
-	      	    	S.close s
-		    else
-				S.select (fun x -> `Fallo x) s
-	      	    	
-		    	 
-
 
 
 
@@ -187,7 +177,13 @@ let rec server s =
 		    server s
 
 	(*aca hay que verificar que el carrito no se lleve mas plata de la que tiene en productos, para esto hay que recorrer la lista y sumar los precios * cantidad *)
-	| `Finalizar1 s -> ultimo s
+	| `Finalizar1 s -> let r = Random.bool () in
+	       	if r = true then
+	      	    	let s = S.select (fun x -> `Salir x) s in
+	      	    	S.close s
+		    else
+			let s = S.select (fun x -> `Fallo x) s in
+			server s
 
 	| `Fallo s -> let s = S.send (-1) s in
 	      	    	server s
