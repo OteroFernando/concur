@@ -13,54 +13,98 @@
 
 module Session = Session.Bare
 
-let rec verif_pedido catalogo (carrito, valido) =	(* armo el carrito (valido = true) o la lista a devolver (valido = false) *)
-	match carrito with
-    | [] -> ([], valido)
+let rec verif_pedido catalogo pedido = 
+	match pedido with
+    | [] -> true
     | (id, cant) :: xs -> if sec List.find (fun s -> fst s = id) catalogo >= cant then (* List.find (s -> cond) catalogo devuelve el elemento s en la lista catalogo si lo encuentra *)
-    						((id, cant) :: f_solicitar catalogo xs, valido) else ((id, sec s) :: f_solicitar catalogo xs, false)
+    						verif_pedido catalogo xs else false
 
-(*La idea es q se le pueda pasar al server una tira de instrucciones*)
+let rec devolver_disponibles catalogo pedido = 
+	match pedido with
+	| [] -> []
+	| (id, cant) :: xs -> (id, sec List.find (fun s -> fst s = id) catalogo) :: devolver_disponibles catalogo xs
 
-(*de momento esta funcion no esta hecha D: *)
+let rec sumar_en_carrito carrito pedido = 
+	match carrito with
+	| [] -> 
+		match pedido with
+		| [] -> []
+		| y :: ys -> y :: sumar_en_carrito [] ys
 
-let rec server s =
-  match S.branch s with
-    `Quit s -> S.close s
-  | `Solicitar s -> let n, s = S.receive s in
+	| (id,cant) :: xs -> 
+		match pedido with
+		| [] -> (id, cant) :: modif_catalogo xs pedido
+		| (id2, cant2) :: ys -> if id = id2 then (id, cant - cant2) :: modif_catalogo xs  ys	(* asumo ambas listas ordenadas, sino no funca ni a palos *)
+			else if id < id2 then (id, cant2) :: modif_catalogo xs pedido
+			else (id, cant2) :: modif_catalogo carrito ys
+
+let rec restar_en_catalogo catalogo pedido = 
+	match catalogo with
+	| [] -> []
+	| (id,cant) :: xs -> 
+		match pedido with
+		| [] -> (id, cant) :: modif_catalogo xs pedido
+		| (id2, cant2) :: ys -> if id = id2 then (id, cant - cant2) :: modif_catalogo xs  ys	(* asumo ambas listas ordenadas, sino no funca ni a palos *)
+			else
+				(id, cant2) :: modif_catalogo xs pedido
+
+let rec anular_carrito catalogo carrito = 
+	match catalogo with
+	| [] -> []
+	| (id,cant) :: xs -> 
+		match carrito with
+		| [] -> (id, cant) :: modif_catalogo xs carrito
+		| (id2, cant2) :: ys -> if id = id2 then (id, cant + cant2) :: modif_catalogo xs  ys	(* asumo ambas listas ordenadas, sino no funca ni a palos *)
+			else
+				(id, cant2) :: modif_catalogo xs carrito
+
+
+
+(* Intento aplicar el truco de pasar el catalogo y carrito sin q el cliente lo pueda usar. dsp reviso *)
+let server s =	(* SIEMPRE LE PASO AL SERVER 1ro catalogo luego carrito luego lo q sea, y devuelvo de la misma forma *)
+ 	match S.branch s with
+  	(* Recibimos catalogo, carrito y pedido. Verificamos que las cantidades del pedido puedan satisfacerse, agregamos esas cantidades al carrito y 
+  	las quitamos del catalogo. Sino, devolvemos la lista de los elementos del pedido con las cant del catalogo *)
+  	| `Pedir s -> let n, s = S.receive s in
 	       let m, s = S.receive s in
-	       f_solicitar n m
-  | `Mult s -> let n, s = S.receive s in
+	       let p, s = S.receive s in
+	       let r = verif_pedido n p in
+	       if r = false then
+		       let s = S.send n m (devolver_disponibles n p) in (* devuelvo el catalogo, carrito y la respuesta al pedido erroneo *)
+		       (* enviar s a client() *)
+		   else 
+		   		let s = S.send (restar_en_catalogo n p) (sumar_en_carrito m p) p in (* devuelvo el catalogo modificado y el carrito modificado (y p xq tal vez necesito recibir 3 cosas) *)
+		       (* enviar s a client() *)
+	
+	(* Si puedo, solicitar funciona en el lado cliente *)
+
+	(*la idea es agarrar la lista del carrito y concatenarla a la lista del negocio  *)
+  	| `Abandonar s -> let n, s = S.receive s in
 	       let m, s = S.receive s in
-	       let s = S.send (n * m) s in
-	       server s
-  | `Div s ->  let n, s = S.receive s in
-               let m, s = S.receive s in
-               let s = S.send (n / m) s in
-               let s = S.send (n mod m) s in
-               server s
-  | `Neg s  -> let n, s = S.receive s in
-	       let s = S.send (-n) s in
-	       server s
-  | `Eq s   -> let n, s = S.receive s in
+	       let s = S.send (anular_carrito n m) [] in 	(* devuelvo el catalogo completo y el carrito bacio*)
+	       S.close s
+
+	(* aca la idea es fijarse si el producto y su cantidad estan en el carrito. El elemento puede quedar con cant 0 *)
+	| `Quitar s -> let n, s = S.receive s in
 	       let m, s = S.receive s in
-	       let s = S.send (n = m) s in
-	       server s
-(*
-let abandonar carrito productos cantidades precios =
-  let rec aux l c =(*la idea es agarrar la lista del carrito y concatenarla a la lista del negocio  *)
+	       let q, s = S.receive s in
+
+	(*aca hay que verificar que el carrito no se lleve mas plata de la que tiene en productos, para esto hay que recorrer la lista y sumar los precios * cantidad *)
+	| `Finalizar s ->
 
 
-let pedir carrito productos cantidades precios = (*aca el tipo recibe el producto y la cantidad y nos tenemos que fijar si esas cantidades estan en los productos y en cantidades   *)
+(* aca simulamos el cliente, y hacemos q llame al servidor con los distintos datos "hardcodeados". Como si el cliente lo recibiera de la persona. *)
+let client =
+  let s = Session.select (fun x -> `Add x) ep in (* select `Add operation *)
+  let s = Session.send x s in
+  let s = Session.send y s in
+  let result, s = Session.receive s in
+  Session.close s;
+  result
 
-
-let quitar producto cantidad carrito productos cantidades precios = (* aca la idea es fijarse si el producto y su cantidad estan en el carrito y si al quitarlos la cantidad de del producto en el carrito es cero, se debe quitar del carrito *)
-
-let finalizar carrito = (*aca hay que verificar que el carrito no se lleve mas plata de la que tiene en productos, para esto hay que recorrer la lista y sumar los precios * cantidad *)
-
-let solicitar = (* aca hay que retornar el contenido del carrito y sumar el monto total de la compra *)
-*)
 
 let _  =
+(* llamar a cliente*)
   let carrito = [] in
   let productos = [1;2;3] in
   let cantidades = [1;2;3] in
