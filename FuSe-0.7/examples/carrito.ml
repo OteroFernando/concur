@@ -18,6 +18,15 @@
 
 module S = Session.Bare
 
+let print_list f lst =
+  let rec print_elements = function
+    | [] -> ()
+    | h::t -> f h; print_string ";"; print_elements t
+  in
+  print_string "[";
+  print_elements lst;
+  print_string "]";;
+
 let rec aux_catalogo i n catalogo =
 	Random.init(Unix.time ());
 	(i, Random.int n +1, Random.int n +1) :: catalogo;
@@ -124,8 +133,8 @@ let rec cobrar catalogo carrito =
 
 
 
-(* Intento aplicar el truco de pasar el catalogo y carrito sin q el cliente lo pueda usar. dsp reviso *)
-let rec server s =	(* SIEMPRE LE PASO AL SERVER 1ro catalogo 2do carrito luego lo q sea, y devuelvo de la misma forma *)
+
+let rec server s =	
  	match S.branch s with
   	(* Recibimos catalogo, carrito y pedido. Verificamos que las cantidades del pedido puedan satisfacerse, agregamos esas cantidades al carrito y 
   	las quitamos del catalogo. Sino, devolvemos la lista de los elementos del pedido con las cant del catalogo *)
@@ -133,9 +142,10 @@ let rec server s =	(* SIEMPRE LE PASO AL SERVER 1ro catalogo 2do carrito luego l
 	       let m, s = S.receive s in
 	       let p, s = S.receive s in
 	       let r = verif_pedido n p in
+	       let s = S.send r s in
 	       if r = false then
-		      (* let s = S.send n s in 
-		       let s = S.send m s in *)
+		       let s = S.send n s in 
+		       (*let s = S.send m s in *)
 		       let s = S.send (devolver_disponibles n p) s in (* devuelvo el catalogo, carrito y la respuesta al pedido erroneo *)
 		       (* enviar s a client() *)
 		       server s
@@ -149,8 +159,12 @@ let rec server s =	(* SIEMPRE LE PASO AL SERVER 1ro catalogo 2do carrito luego l
 	(* Solicitar multiplica cant * precio para cada elemento del carrito *)
 	| `Solicitar s -> let n, s = S.receive s in
 	       let m, s = S.receive s in
-	       let s = S.send m s in 	(* este tal vez no es necesario *)
-	       let s = S.send (solicitar n m) s in 	(* devuelvo el catalogo completo y el carrito bacio*)
+	       let r = (solicitar n m) in
+	       print_list m;
+	       print_int r;
+	       (*
+	       let s = S.send r s in
+	   		*)
 	       server s
 
 	(*la idea es agarrar la lista del carrito y volcarla en el catalogo  *)
@@ -170,31 +184,55 @@ let rec server s =	(* SIEMPRE LE PASO AL SERVER 1ro catalogo 2do carrito luego l
 
 	(*aca hay que verificar que el carrito no se lleve mas plata de la que tiene en productos, para esto hay que recorrer la lista y sumar los precios * cantidad *)
 	| `Finalizar1 s -> let n, s = S.receive s in
-	       let m, s = S.receive s in
-               let r = Random.bool in
-               if r = false then
-	       	    let s = S.send (solicitar n m) s in
+	       	let m, s = S.receive s in
+	       	let r = Random.bool () in
+	       	if r = true then
+	   	    	let s = S.send (solicitar n m) s in
 	      	    S.close s
-   	       else
-			(* fallo la transaccion, reintentar? *)
-			let s = S.send m s
-		    server s
+		    else
+				(* fallo la transaccion, reintentar? *)
+				let s = S.send -1 s in
+		    	server s
+
 
 (* aca simulamos el cliente, y hacemos q llame al servidor con los distintos datos "hardcodeados". Como si el cliente lo recibiera de la persona. *)
 let client s =
-
 	let s = S.select (fun x -> `Pedir x) s in (* select `Pedir operation *)
 	let s = S.send (crear_catalogo 10) s in
 	let s = S.send [] s in
-	let pedido = (5,2) :: (2,4) :: (4,1) ::[] in
+	let pedido = [(2,4);(4,3);(5,1)] in
 	let s = S.send pedido s in
-	let result, s = S.receive s in
+
+	let ok = S.receive s in
+	let cat, s = S.receive s in
+	let carr, s = S.receive s in
+	print_bool ok;
+
+	let s = S.select (fun x -> `Quitar x) s in (* select `Quitar operation *)
+	let s = S.send cat s in
+	let s = S.send carr s in
+	let quitar = (5,7) in
+	let s = S.send quitar s in
+
+	let cat, s = S.receive s in
+	let carr, s = S.receive s in
+
+	let s = S.select (fun x -> `Solicitar x) s in (* select `Solicitar operation *)
+	let s = S.send cat s in
+	let s = S.send carr s in
+
+	let s = S.select (fun x -> `Finalizar1 x) s in (* select `Finalizar1 operation *)
+	let s = S.send cat s in
+	let s = S.send carr s in
+
+	let res = S.receive s in
+	print_int res;
+	print_newline()
 	S.close s;
-	result
 
 
 let _ =
   	let a, b = S.create () in
 	let _ = Thread.create client a in
- 	print_int (math_client b);
+ 	print_int (client b);
   	print_newline()
