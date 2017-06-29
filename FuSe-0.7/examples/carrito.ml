@@ -196,35 +196,50 @@ let rec server s =
 
 (* aca simulamos el cliente, y hacemos q llame al servidor con los distintos datos "hardcodeados". Como si el cliente lo recibiera de la persona. *)
 let client s =
+	print_newline();
+	print_string "1";
+	print_newline();
 	let s = S.select (fun x -> `Pedir x) s in (* select `Pedir operation *)
 	let s = S.send (crear_catalogo 10) s in
 	let s = S.send [] s in
 	let pedido = [(2,4);(4,3);(5,1)] in
 	let s = S.send pedido s in
 
+	print_string "2";
+	print_newline();
 	let ok, s = S.receive s in
 	Printf.printf "%B" ok;
+	print_newline();
 	let cat, s = S.receive s in
 	let carr, s = S.receive s in
 	
-
+	print_string "3";
+	print_newline();
 	let s = S.select (fun x -> `Quitar x) s in (* select `Quitar operation *)
 	let s = S.send cat s in
 	let s = S.send carr s in
 	let quitar = (5,7) in
 	let s = S.send quitar s in
 
+	print_string "4";
+	print_newline();
 	let cat, s = S.receive s in
 	let carr, s = S.receive s in
 
+	print_string "5";
+	print_newline();
 	let s = S.select (fun x -> `Solicitar x) s in (* select `Solicitar operation *)
 	let s = S.send cat s in
 	let s = S.send carr s in
 
+	print_string "6";
+	print_newline();
 	let s = S.select (fun x -> `Finalizar1 x) s in (* select `Finalizar1 operation *)
 	let s = S.send cat s in
 	let s = S.send carr s in
 
+	print_string "7";
+	print_newline();
 	let res, s = S.receive s in
 	print_int res;
 
