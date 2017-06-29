@@ -128,10 +128,10 @@ let rec ultimo s =
 	       	let r = Random.bool () in
 	       	if r = true then
 	      	    	let s = S.select (fun x -> `Salir x) s in
-	      	    	S.close s;
+	      	    	S.close s
 		    else
-			let s = S.select (fun x -> `Fallo x) s in
-			S.close s;	      	    	
+			let s = S.select (fun x -> `Fallo x) s
+	      	    	
 		    	 
 
 
