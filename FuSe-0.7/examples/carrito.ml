@@ -124,14 +124,14 @@ let rec cobrar catalogo carrito =
     						if b  >= cant then 
     						cobrar catalogo xs else false
 
-let ultimo s =
+let rec ultimo s =
 	       	let r = Random.bool () in
 	       	if r = true then
 	      	    	let s = S.select (fun x -> `Salir x) s in
 	      	    	S.close s;
 		    else
 			let s = S.send (-1) s in
-	      	    	let s = S.select (fun x -> `Finalizar1 x) s in	      	    	
+	      	    	ultimo s	      	    	
 		    	 
 
 
