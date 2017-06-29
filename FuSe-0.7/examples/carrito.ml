@@ -181,12 +181,14 @@ let rec server s =
 	       	let r = Random.bool () in
 	       	if r = true then
 	   	    	let s = S.send (solicitar n m) s in
-	      	    S.close s
+	      	    let s = S.select (fun x -> `Salir x) s in
 		    else
 				(* fallo la transaccion, reintentar? *)
 				let s = S.send (-1) s in
 		    	server s
+
 *)
+	| `Salir s -> S.close s
 
 
 (* aca simulamos el cliente, y hacemos q llame al servidor con los distintos datos "hardcodeados". Como si el cliente lo recibiera de la persona. *)
@@ -197,10 +199,11 @@ let client s =
 	let pedido = [(2,4);(4,3);(5,1)] in
 	let s = S.send pedido s in
 
-	let ok = S.receive s in
+	let ok, s = S.receive s in
+	Printf.printf "%B" ok;
 	let cat, s = S.receive s in
 	let carr, s = S.receive s in
-	print_bool ok;
+	
 
 	let s = S.select (fun x -> `Quitar x) s in (* select `Quitar operation *)
 	let s = S.send cat s in
@@ -230,7 +233,7 @@ let client s =
 let _ =
   	let a, b = S.create () in
 	let _ = Thread.create client a in
- 	print_int (client b);
+ 	(*print_int (client b);*)
   	print_newline()
 
 
