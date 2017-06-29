@@ -18,6 +18,14 @@
 
 module S = Session.Bare
 
+let rec aux_catalogo i n catalogo =
+	Random.init(Unix.time ());
+	(i, Random.int n +1, Random.int n +1) :: catalogo;
+	if i > 0 then aux_catalogo i-1 n catalogo
+
+let crear_catalogo n = 
+	aux_catalogo n n []
+
 let rec find2 lista elem =
 	match lista with
 	| [] -> (-1,-1,-1)
@@ -111,7 +119,7 @@ let rec cobrar catalogo carrito =
 	match carrito with
     | [] -> true
     | (id, cant) :: xs -> let (a,b,c) = find2 catalogo id in
-    						if b  >= cant then (* List.find (s -> cond) catalogo devuelve el elemento s en la lista catalogo si lo encuentra *)
+    						if b  >= cant then 
     						cobrar catalogo xs else false
 
 
@@ -132,7 +140,8 @@ let rec server s =	(* SIEMPRE LE PASO AL SERVER 1ro catalogo 2do carrito luego l
 		       (* enviar s a client() *)
 		       server s
 		   else 
-		   		let s = S.send (restar_en_catalogo n p) s in (* devuelvo el catalogo modificado y el carrito modificado *)
+		   		let t = restar_en_catalogo n p in
+		   		let s = S.send t s in (* devuelvo el catalogo modificado y el carrito modificado *)
 		       (*	let s = S.send (sumar_en_carrito m p) s in *)
 		       (* enviar s a client() *)
 		       server s
@@ -162,26 +171,30 @@ let rec server s =	(* SIEMPRE LE PASO AL SERVER 1ro catalogo 2do carrito luego l
 	(*aca hay que verificar que el carrito no se lleve mas plata de la que tiene en productos, para esto hay que recorrer la lista y sumar los precios * cantidad *)
 	| `Finalizar1 s -> let n, s = S.receive s in
 	       let m, s = S.receive s in
-               let r = Random.bool () in
+               let r = Random.bool in
                if r = false then
-	       	    let s = S.send (solicitar n m) s in 	(* falta q si falla la transaccion, no cierre el vinculo *)
+	       	    let s = S.send (solicitar n m) s in
 	      	    S.close s
    	       else
 			(* fallo la transaccion, reintentar? *)
+			let s = S.send m s
 		    server s
 
 (* aca simulamos el cliente, y hacemos q llame al servidor con los distintos datos "hardcodeados". Como si el cliente lo recibiera de la persona. *)
-let client s x y =
-  let s = S.select (fun x -> `Pedir x) s in (* select `Add operation *)
-  let s = S.send x s in
-  let s = S.send y s in
-  let result, s = S.receive s in
-  S.close s;
-  result
+let client s =
+
+	let s = S.select (fun x -> `Pedir x) s in (* select `Pedir operation *)
+	let s = S.send (crear_catalogo 10) s in
+	let s = S.send [] s in
+	let pedido = (5,2) :: (2,4) :: (4,1) ::[] in
+	let s = S.send pedido s in
+	let result, s = S.receive s in
+	S.close s;
+	result
 
 
 let _ =
-  let a, b = S.create () in
-  let _ = Thread.create client a in
- (* print_int (math_client b); *)
-  print_newline()
+  	let a, b = S.create () in
+	let _ = Thread.create client a in
+ 	print_int (math_client b);
+  	print_newline()
