@@ -125,8 +125,6 @@ let rec cobrar catalogo carrito =
     						cobrar catalogo xs else false
 
 let rec ultimo s =
-		let n, s = S.receive s in
-	       	let m, s = S.receive s in
 	       	let r = Random.bool () in
 	       	if r = true then
 	      	    	let s = S.select (fun x -> `Salir x) s in
@@ -195,7 +193,10 @@ let rec server s =
 		    	server s
 
 
-	| `Salir s -> let s = S.send (solicitar n m) s in
+	| `Salir s -> let n, s = S.receive s in
+	       		let m, s = S.receive s in
+
+			let s = S.send (solicitar n m) s in
 			S.close s
 
 
