@@ -1,6 +1,7 @@
 NULL =
 
 TESTS = \
+  carrito \
   Tmath \
   Tpapermath \
   TpapermathMonad \

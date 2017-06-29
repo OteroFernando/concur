@@ -16,13 +16,13 @@ module Session = Session.Bare
 let rec verif_pedido catalogo pedido = 
 	match pedido with
     | [] -> true
-    | (id, cant) :: xs -> if sec List.find (fun s -> fst s = id) catalogo >= cant then (* List.find (s -> cond) catalogo devuelve el elemento s en la lista catalogo si lo encuentra *)
+    | (id, cant) :: xs -> if scd List.find (fun s -> fst s = id) catalogo >= cant then (* List.find (s -> cond) catalogo devuelve el elemento s en la lista catalogo si lo encuentra *)
     						verif_pedido catalogo xs else false
 
 let rec devolver_disponibles catalogo pedido = 
 	match pedido with
 	| [] -> []
-	| (id, cant) :: xs -> (id, sec List.find (fun s -> fst s = id) catalogo) :: devolver_disponibles catalogo xs
+	| (id, cant) :: xs -> (id, scd List.find (fun s -> fst s = id) catalogo) :: devolver_disponibles catalogo xs
 
 let rec sumar_en_carrito carrito pedido = 
 	match carrito with
@@ -72,9 +72,11 @@ let server s =	(* SIEMPRE LE PASO AL SERVER 1ro catalogo luego carrito luego lo 
 	       if r = false then
 		       let s = S.send n m (devolver_disponibles n p) in (* devuelvo el catalogo, carrito y la respuesta al pedido erroneo *)
 		       (* enviar s a client() *)
+		       S.close s
 		   else 
 		   		let s = S.send (restar_en_catalogo n p) (sumar_en_carrito m p) p in (* devuelvo el catalogo modificado y el carrito modificado (y p xq tal vez necesito recibir 3 cosas) *)
 		       (* enviar s a client() *)
+		       S.close s
 	
 	(* Si puedo, solicitar funciona en el lado cliente *)
 
@@ -83,7 +85,7 @@ let server s =	(* SIEMPRE LE PASO AL SERVER 1ro catalogo luego carrito luego lo 
 	       let m, s = S.receive s in
 	       let s = S.send (anular_carrito n m) [] in 	(* devuelvo el catalogo completo y el carrito bacio*)
 	       S.close s
-
+(*
 	(* aca la idea es fijarse si el producto y su cantidad estan en el carrito. El elemento puede quedar con cant 0 *)
 	| `Quitar s -> let n, s = S.receive s in
 	       let m, s = S.receive s in
@@ -91,7 +93,7 @@ let server s =	(* SIEMPRE LE PASO AL SERVER 1ro catalogo luego carrito luego lo 
 
 	(*aca hay que verificar que el carrito no se lleve mas plata de la que tiene en productos, para esto hay que recorrer la lista y sumar los precios * cantidad *)
 	| `Finalizar s ->
-
+*)
 
 (* aca simulamos el cliente, y hacemos q llame al servidor con los distintos datos "hardcodeados". Como si el cliente lo recibiera de la persona. *)
 let client =
@@ -109,3 +111,4 @@ let _  =
   let productos = [1;2;3] in
   let cantidades = [1;2;3] in
   let precios = [1;2;3] in
+  	4 :: precios
