@@ -133,7 +133,7 @@ let rec server s =	(* SIEMPRE LE PASO AL SERVER 1ro catalogo 2do carrito luego l
 		       server s
 		   else 
 		   		let s = S.send (restar_en_catalogo n p) s in (* devuelvo el catalogo modificado y el carrito modificado *)
-		       	let s = S.send (sumar_en_carrito m p) s in
+		       	let s = S.send (sumar_en_carrito m p) s in 
 		       (* enviar s a client() *)
 		       server s
 	
@@ -168,8 +168,8 @@ let rec server s =	(* SIEMPRE LE PASO AL SERVER 1ro catalogo 2do carrito luego l
 
 
 (* aca simulamos el cliente, y hacemos q llame al servidor con los distintos datos "hardcodeados". Como si el cliente lo recibiera de la persona. *)
-let client s =
-  let s = S.select (fun x -> `Pedir x) ep in (* select `Add operation *)
+let client s x y =
+  let s = S.select (fun x -> `Pedir x) s in (* select `Add operation *)
   let s = S.send x s in
   let s = S.send y s in
   let result, s = S.receive s in
@@ -180,5 +180,5 @@ let client s =
 let _ =
   let a, b = S.create () in
   let _ = Thread.create client a in
-  print_int (math_client b);
+ (* print_int (math_client b); *)
   print_newline()
