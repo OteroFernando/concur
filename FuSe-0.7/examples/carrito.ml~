@@ -124,18 +124,16 @@ let rec cobrar catalogo carrito =
     						if b  >= cant then 
     						cobrar catalogo xs else false
 
-let ultimo s =
+let rec ultimo s =
 		let n, s = S.receive s in
 	       	let m, s = S.receive s in
 	       	let r = Random.bool () in
 	       	if r = true then
-	   	    	let s = S.send (solicitar n m) s in
-	      	    let s = S.select (fun x -> `Salir x) s in
-	      	    S.close s;
+	      	    	let s = S.select (fun x -> `Salir x) s in
+	      	    	S.close s;
 		    else
-				(* fallo la transaccion, reintentar? *)
-				let s = S.select (fun x -> `Finalizar x) s in
-		    	
+	      	    	let s = S.select (fun x -> `Fallo x) s in	      	    	
+		    	ultimo s 
 
 
 
@@ -190,20 +188,15 @@ let rec server s =
 		    server s
 
 	(*aca hay que verificar que el carrito no se lleve mas plata de la que tiene en productos, para esto hay que recorrer la lista y sumar los precios * cantidad *)
-	| `Finalizar1 s -> let n, s = S.receive s in
-	       	let m, s = S.receive s in
-	       	let r = Random.bool () in
-	       	if r = true then
-	   	    	let s = S.send (solicitar n m) s in
-	      	    let s = S.select (fun x -> `Salir x) s in
-	      	    S.close s;
-		    else
-				(* fallo la transaccion, reintentar? *)
-				let s = S.send (-1) s in
+	| `Finalizar1 s -> ultimo s
+				
+
+	| `Fallo s -> let s = S.send (-1) s in
 		    	server s
 
 
-	| `Salir s -> S.close s
+	| `Salir s -> let s = S.send (solicitar n m) s in
+			S.close s
 
 
 (* aca simulamos el cliente, y hacemos q llame al servidor con los distintos datos "hardcodeados". Como si el cliente lo recibiera de la persona. *)
