@@ -249,9 +249,10 @@ let client s =
 
 
 let _ =
+	print_string "0";
   	let a, b = S.create () in
 	let _ = Thread.create client a in
- 	(*print_int (client b);*)
+ 	client b;
   	print_newline()
 
 
