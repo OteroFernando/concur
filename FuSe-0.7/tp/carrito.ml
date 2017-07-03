@@ -215,6 +215,7 @@ let client s =
 	
 	print_string "3";
 	print_newline();
+
 	let s = S.select (fun x -> `Quitar x) s in (* select `Quitar operation *)
 	let s = S.send cat s in
 	let s = S.send carr s in
@@ -251,8 +252,8 @@ let client s =
 let _ =
 	print_string "0";
   	let a, b = S.create () in
-	let _ = Thread.create client a in
- 	client b;
+	let _ = Thread.create server a in
+ 	print_int (client b);
   	print_newline()
 
 

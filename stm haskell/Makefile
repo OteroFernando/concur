@@ -1,0 +1,1 @@
+# ghc -o baarrera baarrera.hs
