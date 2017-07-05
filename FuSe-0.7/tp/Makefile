@@ -4,6 +4,7 @@ TESTS = \
   carrito \
   carrito2 \
   carrito3 \
+  carrito4 \
   $(NULL)
 
 TESTS_OPT = $(TESTS:%=%.opt)
