@@ -161,19 +161,19 @@ let rec servicio s cat carr =
 			let cat2 = devolver_a_catalogo cat carr q in
 			let carr2 = quitar_carrito carr q in
 		    servicio s cat2 carr2
-
-	| `Finalizar1 s -> let r, s = S.receive s in 	(* Para poder testear todo el punto 2 al mismo tiempo *)
+(*
+	| `Finalizar1 s ->  let r = Random.bool () in
 	       	if r = true then
 	      	    	let s = S.select (fun x -> `Salir x) s in
 	      	    	S.close s
 		    else
 			let s = S.select (fun x -> `Fallo x) s in
 			servicio s cat carr
-
-	| `Finalizar2 s -> let r, s = S.receive s in 	(* Para poder testear todo el punto 2 al mismo tiempo *)
+*)
+	| `Finalizar2 s -> let r, s = S.receive s in 	(* Para poder testear todo el punto 2 al mismo tiempo, cambio el random x un recieve *)
 	       	if r = true then
 	      	    	let s = S.select (fun x -> `Salir x) s in
-	      	    	servicio s cat carr
+	      	    	S.close s
 		    else
 			let s = S.select (fun x -> `Fallo x) s in
 			servicio s cat carr
@@ -188,7 +188,7 @@ let server s =
 let client s =
 	print_string "b)";
 	print_newline();
-	let s = S.select (fun x -> `Finalizar1 x) s in 	(* Primero intento un pago *)
+	let s = S.select (fun x -> `Finalizar2 x) s in 	(* Primero intento un pago *)
 	let s = S.send false s in 						(* Le digo que falle *)
    	match S.branch s with
 	    `Fallo s -> 
@@ -197,8 +197,8 @@ let client s =
 			let s = S.select (fun x -> `Pedir x) s in 		(* ahora hago un pedido luego de intentar pagar *)
 			let pedido = [(1,1)] in 						(* este pedido siempre esta *)
 			let s = S.send pedido s in
-			let ok, s = S.receive s in
-			let carr, s = S.receive s in
+			let _, s = S.receive s in
+			let _, s = S.receive s in
 
 			print_string "d)";
 			print_newline();
@@ -213,7 +213,7 @@ let client s =
 			let quitar = (1,1) in
 			let s = S.send quitar s in
 			let s = S.select (fun x -> `Solicitar x) s in 	(* Verifico que la lista esta vacia *)
-			let s = S.select (fun x -> `Finalizar1 x) s in 	(* Finalizo sin problemas *)
+			let s = S.select (fun x -> `Finalizar2 x) s in 	(* Finalizo sin problemas *)
 			let s = S.send true s in 						(* En un sistema real, como le cobra $0 no hay problema (o se agregaria un if) *)
 		   	(match S.branch s with
 			    `Fallo s ->

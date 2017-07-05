@@ -17,7 +17,7 @@ let print_list f lst =
   print_string "]";;
 
 let rec aux_catalogo i n catalogo =
-	Random.init(n);
+	Random.self_init ();
 	if i < n then
 	let a = ((i, (Random.int n) +1), (Random.int n) +1) in
 	a :: aux_catalogo (i+1) n catalogo
@@ -162,70 +162,65 @@ let rec servicio s cat carr n =
 			let carr2 = quitar_carrito carr q in
 		    servicio s cat2 carr2 n
 
-	| `Finalizar1 s -> let r = Random.bool () in
+	| `Finalizar3 s -> let r = false in 	(* hago que sea falso para poder probar el ejercicio *)
 	       	if r = true then
-	      	    	let s = S.select (fun x -> `Salir x) s in
+	      	    	let s = S.select (fun x -> `Cobro x) s in 	(* Si bien no hay una implementacion, aca se cobraria el changuito *)
 	      	    	S.close s
 		    else
 			if n > 0 then
-			let s = S.select (fun x -> `Fallo x) s in
-			let n= n-1 in
-			servicio s cat carr n
+				let s = S.select (fun x -> `Fallo x) s in
+				let n= n-1 in
+				servicio s cat carr n
 			else
-				let s = S.select (fun x -> `Salir x) s in
-	      	    		S.close s	
+				let s = S.select (fun x -> `Salir x) s in 	(* No se realiza el cobro y sale directamente*)
+	      	    	S.close s	
 
-(*el n se hardcodea, como dios manda *)
+
+
 let server s =
-	let cat = (crear_catalogo 10) in
+	let cat = (crear_catalogo 20) in
 	let carr = [] in
 	servicio s cat carr 2
 
 
 (* aca simulamos el cliente, y hacemos q llame al servidor con los distintos datos "hardcodeados". Como si el cliente lo recibiera de la persona. *)
 let client s =
-	print_newline();
-	print_string "1";
-	print_newline();
-
-	let s = S.select (fun x -> `Pedir x) s in (* select `Pedir operation *)
-	let pedido = [(2,4);(4,3);(5,1)] in
+	let s = S.select (fun x -> `Pedir x) s in 		(* ahora hago un pedido luego de intentar pagar *)
+	let pedido = [(1,1)] in 						(* este pedido siempre esta *)
 	let s = S.send pedido s in
+	let _, s = S.receive s in
+	let _, s = S.receive s in
 
-	print_string "2";
-	print_newline();
-	let ok, s = S.receive s in
-	Printf.printf "%B" ok;
-	print_newline();
-	let carr, s = S.receive s in
-
-	print_string "3";
-	print_newline();
-
-	let s = S.select (fun x -> `Quitar x) s in (* select `Quitar operation *)
-	let quitar = (5,7) in
-	let s = S.send quitar s in
-
-	print_string "4";
-	print_newline();
-
-	let s = S.select (fun x -> `Solicitar x) s in (* select `Solicitar operation *)
-	print_string "5";
-	print_newline();
-	let s = S.select (fun x -> `Finalizar1 x) s in (* select `Finalizar1 operation *)
-
-	print_string "6";
-	print_newline();
+   	let s = S.select (fun x -> `Finalizar3 x) s in
    	match S.branch s with
-	    `Fallo s ->
-			let s = S.select (fun x-> `Abandonar x) s in
-			S.close s
-		| `Salir s -> S.close s
-
+   		| `Salir s -> S.close s
+		| `Cobro s -> S.close s
+	    | `Fallo s ->
+			(print_string " Fallo ";
+			print_newline ();
+			let s = S.select (fun x -> `Finalizar3 x) s in
+		   	match S.branch s with
+		   		| `Salir s -> S.close s
+				| `Cobro s -> S.close s
+			    | `Fallo s ->
+					(print_string " Fallo ";
+					print_newline ();
+					let s = S.select (fun x -> `Finalizar3 x) s in
+					   	match S.branch s with
+					   		| `Salir s -> S.close s
+							| `Cobro s -> S.close s
+						    | `Fallo s ->
+								(print_string " No deberia llegar a este fallo ";
+								print_newline ();
+								let s = S.select (fun x-> `Abandonar x) s in
+								S.close s
+							)
+				)
+		)
+		
 
  let _ =
-	print_string "0";
   	let a, b = S.create () in
 	let _ = Thread.create server a in
  	client b
- 
+ 	

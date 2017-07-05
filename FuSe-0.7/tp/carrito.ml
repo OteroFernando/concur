@@ -191,7 +191,7 @@ let client s =
 	let ok, s = S.receive s in
 	Printf.printf "%B" ok;
 	print_newline();
-	let carr, s = S.receive s in
+	let _, s = S.receive s in
 
 	print_string "3";
 	print_newline();
