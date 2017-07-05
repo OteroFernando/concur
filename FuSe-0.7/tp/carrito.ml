@@ -178,47 +178,45 @@ let server s =
 
 (* aca simulamos el cliente, y hacemos q llame al servidor con los distintos datos "hardcodeados". Como si el cliente lo recibiera de la persona. *)
 let client s =
-	print_newline();
-	print_string "1";
+	print_string "Comienzo cliente";
 	print_newline();
 
 	let s = S.select (fun x -> `Pedir x) s in (* select `Pedir operation *)
 	let pedido = [(2,1);(4,1);(5,1)] in
 	let s = S.send pedido s in
 
-	print_string "2";
-	print_newline();
 	let ok, s = S.receive s in
-	Printf.printf "%B" ok;
+	Printf.printf "Pedido correcto: %B" ok;
 	print_newline();
 	let _, s = S.receive s in
-
-	print_string "3";
-	print_newline();
 
 	let s = S.select (fun x -> `Quitar x) s in (* select `Quitar operation *)
 	let quitar = (5,7) in
 	let s = S.send quitar s in
 
-	print_string "4";
+	print_string "Quitar ok";
 	print_newline();
 
 	let s = S.select (fun x -> `Solicitar x) s in (* select `Solicitar operation *)
-	print_string "5";
+	print_string "Solicitar:";
 	print_newline();
 	let s = S.select (fun x -> `Finalizar1 x) s in (* select `Finalizar1 operation *)
 
-	print_string "6";
-	print_newline();
+	
    	match S.branch s with
 	    `Fallo s ->
+	    (
+			print_string " Fallo el pago";
+			print_newline();
 			let s = S.select (fun x-> `Abandonar x) s in
-			S.close s
-		| `Salir s -> S.close s
+			S.close s)
+		| `Salir s -> 
+		(
+			print_string " Pago realizado";
+			print_newline();
+			S.close s)
 
-
- let _ =
-	print_string "0";
+ let _ = 
   	let a, b = S.create () in
 	let _ = Thread.create server a in
  	client b
