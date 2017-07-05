@@ -20,7 +20,7 @@ let print_list f lst =
 let rec aux_catalogo i n catalogo =
 	Random.init(n);
 	if i < n then
-	let a = ((i, (Random.int n) +1), (Random.int n) +1) in
+	let a = ((i, (Random.int n) +1), (Random.int n*10) +1) in
 	a :: aux_catalogo (i+1) n catalogo
  	else []
 
@@ -129,7 +129,7 @@ let rec cobrar catalogo carrito =
 
 
 (* FUNCIONES PRINCIPALES *)
-let rec servicio s cat carr =
+let rec servicio s cat carr n =
  	match S.branch s with
   	(* Recibimos catalogo, carrito y pedido. Verificamos que las cantidades del pedido puedan satisfacerse, agregamos esas cantidades al carrito y
   	las quitamos del catalogo. Sino, devolvemos la lista de los elementos del pedido con las cant del catalogo *)
@@ -139,12 +139,12 @@ let rec servicio s cat carr =
 	       if r = false then
 		       let t = devolver_disponibles cat p in 	
 		       let s = S.send t s in 
-		       servicio s cat carr
+		       servicio s cat carr n
 		   else
 		   		let t = restar_en_catalogo cat p in
 		   		let q = sumar_en_carrito carr p in
 		        let s = S.send q s in 	(* Seria mejor un select, xq en este lado del if no necesito mandar nada *)
-		       	servicio s t q
+		       	servicio s t q n
 
 	(* Solicitar multiplica cant * precio para cada elemento del carrito *)
 	| `Solicitar s -> let r = (solicitar cat carr) in
@@ -152,7 +152,7 @@ let rec servicio s cat carr =
 	       print_newline();
 	       print_int r;
 	       print_newline();
-	       servicio s cat carr
+	       servicio s cat carr n
 
 	(*la idea es agarrar la lista del carrito y volcarla en el catalogo  *)
   	| `Abandonar s -> S.close s
@@ -161,71 +161,63 @@ let rec servicio s cat carr =
 	| `Quitar s -> let q, s = S.receive s in
 			let cat2 = devolver_a_catalogo cat carr q in
 			let carr2 = quitar_carrito carr q in
-		    servicio s cat2 carr2
+		    servicio s cat2 carr2 n
 
-	| `Finalizar1 s -> let r = Random.bool () in
+	| `Finalizar4 s -> let c, s = S.receive s in 		(* Recibo el canal *)
+			let c = R.send (solicitar cat carr) c in 	(* envio cuanto le cobro a la tarjeta *)
+			let r, _ = R.receive c in 					(* Recibo si la transaccion es posible*)
 	       	if r = true then
-	      	    	let s = S.select (fun x -> `Salir x) s in
-	      	    	S.close s
+      	    	(let s = S.select (fun x -> `Cobro x) s in 	(* Confirmo que se pudo hacer el cobro *)
+      	    	print_string "Cobro realizado con exito";
+      	    	print_newline();
+      	    	S.close s)
 		    else
-			let s = S.select (fun x -> `Fallo x) s in
-			servicio s cat carr
+			if n > 0 then
+				let s = S.select (fun x -> `Fallo x) s in
+				let n= n-1 in
+				servicio s cat carr n
+			else
+				(let s = S.select (fun x -> `Salir x) s in 	(* No se realiza el cobro y sale directamente*)
+					print_string "Muchos intentos fallidos";
+					print_newline();
+	      	    	S.close s)
 
 let server s =
-	let cat = (crear_catalogo 10) in
+	let cat = (crear_catalogo 20) in
 	let carr = [] in
-	servicio s cat carr
+	servicio s cat carr 2
 
 
 let tarjeta c =
+	let _, c = R.receive c in 		(* Recibe un string del client. *)
+	let precio, c = R.receive c in 	(* Recibe un  int del servicio. No hay concurrencia *)
+	(* veriicacion *)
+	if precio > 100 then
+		R.send true c 
+	else
+		R.send false c
 		
 
 (* aca simulamos el cliente, y hacemos q llame al servidor con los distintos datos "hardcodeados". Como si el cliente lo recibiera de la persona. *)
-let client s =
-	print_newline();
-	print_string "1";
-	print_newline();
-
-	let s = S.select (fun x -> `Pedir x) s in (* select `Pedir operation *)
-	let pedido = [(2,4);(4,3);(5,1)] in
+let client s c =
+	let s = S.select (fun x -> `Pedir x) s in
+	let pedido = [(1,1)] in 
 	let s = S.send pedido s in
+	let _, s = S.receive s in
+	let _, s = S.receive s in
 
-	print_string "2";
-	print_newline();
-	let ok, s = S.receive s in
-	Printf.printf "%B" ok;
-	print_newline();
-	let carr, s = S.receive s in
-
-	print_string "3";
-	print_newline();
-
-	let s = S.select (fun x -> `Quitar x) s in (* select `Quitar operation *)
-	let quitar = (5,7) in
-	let s = S.send quitar s in
-
-	print_string "4";
-	print_newline();
-
-	let s = S.select (fun x -> `Solicitar x) s in (* select `Solicitar operation *)
-	print_string "5";
-	print_newline();
-	let s = S.select (fun x -> `Finalizar1 x) s in (* select `Finalizar1 operation *)
-
-	print_string "6";
-	print_newline();
+	let s = S.select (fun x -> `Finalizar4 x) s in
+	let c = R.send "Rambo" c in
+	let s = S.send c s in
    	match S.branch s with
-	    `Fallo s ->
-			let s = S.select (fun x-> `Abandonar x) s in
+   		| `Salir s -> S.close s
+		| `Cobro s -> S.close s
+	    | `Fallo s -> let s = S.select (fun x-> `Abandonar x) s in
 			S.close s
-		| `Salir s -> S.close s
-
 
  let _ =
-	print_string "0";
   	let a, b = S.create () in 
         let c, d = R.create () in 
         let _ = Thread.create server a in
         let _ = Thread.create tarjeta c in
  	client b d
- 
