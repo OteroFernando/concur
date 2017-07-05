@@ -1,1 +1,1 @@
-# ghc -o baarrera baarrera.hs
+# ghc -O2 --make barrera.hs -threaded -rtsopts

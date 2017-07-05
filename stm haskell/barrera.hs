@@ -11,3 +11,4 @@ esperar b = do{
 		})
 }
 -}
+import Control.Parallel
