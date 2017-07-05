@@ -183,7 +183,7 @@ let client s =
 	print_newline();
 
 	let s = S.select (fun x -> `Pedir x) s in (* select `Pedir operation *)
-	let pedido = [(2,4);(4,3);(5,1)] in
+	let pedido = [(2,1);(4,1);(5,1)] in
 	let s = S.send pedido s in
 
 	print_string "2";
