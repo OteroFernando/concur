@@ -47,17 +47,17 @@ let rec devolver_disponibles catalogo pedido =
 
 let rec sumar_en_carrito carrito pedido =
 	match carrito with
-		| [] ->
-			match pedido with
+	| [] ->
+		(match pedido with
 		| [] -> []
-		| y :: ys -> y :: sumar_en_carrito [] ys
+		| y :: ys -> y :: sumar_en_carrito [] ys)
 
 	| (id,cant) :: xs ->
-		match pedido with
+		(match pedido with
 		| [] -> (id, cant) :: sumar_en_carrito xs []
 		| (id2, cant2) :: ys -> if id = id2 then (id, cant + cant2) :: sumar_en_carrito xs  ys	(* asumo ambas listas ordenadas, sino no funca ni a palos *)
 			else if id < id2 then (id, cant2) :: sumar_en_carrito xs pedido
-			else (id, cant2) :: sumar_en_carrito carrito ys
+			else (id, cant2) :: sumar_en_carrito carrito ys)
 
 let rec restar_en_catalogo catalogo pedido =
 	match catalogo with
@@ -110,20 +110,20 @@ let rec diferencia carrito producto =
 let rec devolver_a_catalogo catalogo carrito producto =
 	match catalogo with
 	| [] -> []
-	| ((id, cant), _) :: xs -> let (a,_) = producto in
+	| ((id, cant), precio) :: xs -> let (a,_) = producto in
 							if a = id then
 								let d = diferencia carrito producto in
-								(id, cant + d) :: devolver_a_catalogo xs carrito producto
+								((id, cant + d),precio) :: devolver_a_catalogo xs carrito producto
 							else
-								(id, cant) :: devolver_a_catalogo xs carrito producto
-(* auxiliares de finalizar *)
+								((id, cant),precio) :: devolver_a_catalogo xs carrito producto
+(* auxiliares de finalizar 
 let rec cobrar catalogo carrito =
 	match carrito with
     | [] -> true
     | (id, cant) :: xs -> let ((_,b),_) = find2 catalogo id in
     						if b  >= cant then
     						cobrar catalogo xs else false
-
+*)
 
 
 
@@ -174,8 +174,8 @@ let rec server s =
 		    server s
 
 	| `Finalizar1 s ->
-	let q, s = S.receive s in
-	let q, s = S.receive s in
+	let n, s = S.receive s in
+	let m, s = S.receive s in
 	 	let r = Random.bool () in
 	       	if r = true then
 	      	    	let s = S.select (fun x -> `Salir x) s in
@@ -199,7 +199,7 @@ let client s =
 	print_newline();
 	print_string "1";
 	print_newline();
-(*
+
 	let s = S.select (fun x -> `Pedir x) s in (* select `Pedir operation *)
 	let s = S.send (crear_catalogo 10) s in
 	let s = S.send [] s in
@@ -216,11 +216,11 @@ let client s =
 
 	print_string "3";
 	print_newline();
-*)
 
+(*
 	let cat = (crear_catalogo 10) in
 	let carr = [] in
-
+*)
 
 	let s = S.select (fun x -> `Quitar x) s in (* select `Quitar operation *)
 	let s = S.send cat s in
@@ -234,11 +234,6 @@ let client s =
 	let carr, s = S.receive s in
 	print_string "5";
 	print_newline();
-
-(* DESDE ACA TODO BIEN PARECE *)
-
-	
-
 
 	let s = S.select (fun x -> `Solicitar x) s in (* select `Solicitar operation *)
 	let s = S.send cat s in
@@ -262,10 +257,10 @@ let client s =
 							S.close s
 			| `Salir s -> S.close s
 
-(*
+
  let _ =
 	print_string "0";
   	let a, b = S.create () in
 	let _ = Thread.create server a in
  	client b
- *)
+ 
