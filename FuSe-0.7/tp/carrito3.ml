@@ -196,18 +196,20 @@ let client s =
    		| `Salir s -> S.close s
 		| `Cobro s -> S.close s
 	    | `Fallo s ->
-			(print_string " Fallo ";
+			(print_string " Fallo (a la 3ra el servidor cierra la coneccion) ";
 			print_newline ();
 			let s = S.select (fun x -> `Finalizar3 x) s in
 		   	match S.branch s with
 		   		| `Salir s -> S.close s
 				| `Cobro s -> S.close s
 			    | `Fallo s ->
-					(print_string " Fallo ";
+					(print_string " Fallo. Si falla 1 vez mas cierra la coneccion";
 					print_newline ();
 					let s = S.select (fun x -> `Finalizar3 x) s in
 					   	match S.branch s with
-					   		| `Salir s -> S.close s
+					   		| `Salir s -> (print_string " Fallo. El servidor cierra la coneccion";
+									print_newline ();
+									S.close s)
 							| `Cobro s -> S.close s
 						    | `Fallo s ->
 								(print_string " No deberia llegar a este fallo ";

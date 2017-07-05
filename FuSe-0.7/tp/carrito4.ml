@@ -189,9 +189,11 @@ let server s =
 
 
 let tarjeta c =
-	let _, c = R.receive c in 		(* Recibe un string del client. *)
-	let precio, c = R.receive c in 	(* Recibe un  int del servicio. No hay concurrencia *)
+	let usuario, c = R.receive c in 	(* Recibe un string del client. *)
+	let precio, c = R.receive c in 		(* Recibe un  int del servicio. No hay concurrencia *)
 	(* veriicacion *)
+	Printf.printf "Verifico si el usuario %s tiene suficiente dinero para pagar" usuario;
+	print_newline();
 	if precio > 100 then
 		R.send true c 
 	else

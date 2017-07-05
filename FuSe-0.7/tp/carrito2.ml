@@ -197,21 +197,27 @@ let client s =
 			let s = S.select (fun x -> `Pedir x) s in 		(* ahora hago un pedido luego de intentar pagar *)
 			let pedido = [(1,1)] in 						(* este pedido siempre esta *)
 			let s = S.send pedido s in
+			let ok, s = S.receive s in
 			let _, s = S.receive s in
-			let _, s = S.receive s in
+			Printf.printf " Pude realizar el pedido luego de que falle: %B" ok;
+		    print_newline();
 
 			print_string "d)";
 			print_newline();
-
+			let s = S.select (fun x -> `Solicitar x) s in 	(* Verifico que la lista esta vacia *)
 			let s = S.select (fun x -> `Quitar x) s in 		(* Quito un producto que se que no esta. No pasa nada *)
 			let quitar = (5,7) in
 			let s = S.send quitar s in
+			print_string " Pude quitar el elemento 5 del carrito que no estaba (no afecta al carrito ni al catalogo)";
+		    print_newline();
 
 			print_string "c)";
 			print_newline();
 			let s = S.select (fun x -> `Quitar x) s in 		(* Dejo la lista vacia *)
 			let quitar = (1,1) in
 			let s = S.send quitar s in
+			print_string " Dejo la lista vacia:";
+		    print_newline();
 			let s = S.select (fun x -> `Solicitar x) s in 	(* Verifico que la lista esta vacia *)
 			let s = S.select (fun x -> `Finalizar2 x) s in 	(* Finalizo sin problemas *)
 			let s = S.send true s in 						(* En un sistema real, como le cobra $0 no hay problema (o se agregaria un if) *)
@@ -228,7 +234,6 @@ let client s =
 			S.close s
 
  let _ =
-	(*print_string "0";*)
   	let a, b = S.create () in
 	let _ = Thread.create server a in
  	client b
