@@ -19,7 +19,7 @@ let print_list f lst =
 let rec aux_catalogo i n catalogo =
 	Random.self_init ();
 	if i < n then
-	let a = ((i, (Random.int n) +1), (Random.int n) +1) in
+	let a = ((i, (Random.int n) +1), (Random.int n*10) +1) in
 	a :: aux_catalogo (i+1) n catalogo
  	else []
 
@@ -116,21 +116,11 @@ let rec devolver_a_catalogo catalogo carrito producto =
 								((id, cant + d),precio) :: devolver_a_catalogo xs carrito producto
 							else
 								((id, cant),precio) :: devolver_a_catalogo xs carrito producto
-(* auxiliares de finalizar 
-let rec cobrar catalogo carrito =
-	match carrito with
-    | [] -> true
-    | (id, cant) :: xs -> let ((_,b),_) = find2 catalogo id in
-    						if b  >= cant then
-    						cobrar catalogo xs else false
-*)
-
-
 
 (* FUNCIONES PRINCIPALES *)
 let rec servicio s cat carr n =
  	match S.branch s with
-  	(* Recibimos catalogo, carrito y pedido. Verificamos que las cantidades del pedido puedan satisfacerse, agregamos esas cantidades al carrito y
+  	(* Recibimos el pedido. Verificamos que las cantidades del pedido puedan satisfacerse, agregamos esas cantidades al carrito y
   	las quitamos del catalogo. Sino, devolvemos la lista de los elementos del pedido con las cant del catalogo *)
   	| `Pedir s -> let p, s = S.receive s in
 	       let r = verif_pedido cat p in
