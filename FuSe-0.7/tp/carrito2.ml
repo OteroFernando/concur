@@ -170,6 +170,14 @@ let rec servicio s cat carr =
 			let s = S.select (fun x -> `Fallo x) s in
 			servicio s cat carr
 
+	| `Finalizar2 s -> let r, s = S.receive s in 	(* Para poder testear todo el punto 2 al mismo tiempo *)
+	       	if r = true then
+	      	    	let s = S.select (fun x -> `Salir x) s in
+	      	    	servicio s cat carr
+		    else
+			let s = S.select (fun x -> `Fallo x) s in
+			servicio s cat carr
+
 let server s =
 	let cat = (crear_catalogo 10) in
 	let carr = [] in
@@ -180,15 +188,20 @@ let server s =
 let client s =
 	print_string "b)";
 	print_newline();
-	let s = S.select (fun x -> `Finalizar1 x) s in 	(* Primero intento un pago *)
+	let s = S.select (fun x -> `Finalizar2 x) s in 	(* Primero intento un pago *)
 	let s = S.send false s in 						(* Le digo que falle *)
    	match S.branch s with
-	    `Fallo s -> print_string " Sigue luego de fallar el pago";
-		| `Salir s -> print_string " error ";
+	    | `Fallo s -> print_string " Sigue luego de fallar el pago";
+	    | `Salir s -> print_string " Error";
+
 
 	let s = S.select (fun x -> `Pedir x) s in 		(* ahora hago un pedido luego de intentar pagar *)
 	let pedido = [(1,1)] in 						(* este pedido siempre esta *)
 	let s = S.send pedido s in
+	let ok, s = S.receive s in
+	Printf.printf "%B" ok;
+	print_newline();
+	let carr, s = S.receive s in
 
 	print_string "d)";
 	print_newline();
