@@ -200,10 +200,15 @@ let client s =
 	print_string "1";
 	print_newline();
 
+
+
+
 	let s = S.select (fun x -> `Pedir x) s in (* select `Pedir operation *)
 	let s = S.send (crear_catalogo 10) s in
 	let s = S.send [] s in
-	let pedido = [(2,4);(4,3);(5,1)] in
+	(*let pedido = [(2,4);(4,3);(5,1)] in*)
+(* para el c) enviamos el pedido vacío directamente, notar que para que esto funcione, se debe comentar casi todo el código, no se debe hacer solicitar ni quitar*)
+	let pedido = [] in
 	let s = S.send pedido s in
 
 	print_string "2";
@@ -217,7 +222,8 @@ let client s =
 	print_string "3";
 	print_newline();
 
-
+(* aca comenzaría el bloque que hay que comentar del c) *)
+(* para el d) hay que enviar el carrito vacio como en el punto c) y comentar a partir de la linea indicada mas abajo *)
 	let cat = (crear_catalogo 10) in
 	let carr = [] in
 
@@ -234,18 +240,41 @@ let client s =
 	let carr, s = S.receive s in
 	print_string "5";
 	print_newline();
-
-	let s = S.select (fun x -> `Solicitar x) s in (* select `Solicitar operation *)
+(*para el punto d) hay que comentar la parte de solicitar para ver que efectivamente se puede eliminar un objeto que no esta en una lista vacia *)
+(*	let s = S.select (fun x -> `Solicitar x) s in (* select `Solicitar operation *)
 	let s = S.send cat s in
-	let s = S.send carr s in
-
+	let s = S.send carr s in*)
+(* para el a) agregamos un nuevo paso en el cliente, hace todo y primero sale y luego intenta finalizar 
 	print_string "6";
+	print_newline();
+	let s = S.select (fun x -> `Salir x) s in (* select `salir operation *)
+
+SI SE DESCOMENTA este bloque, se puede ver que no compila el programa, así que a) es imposible
+*)
+
+
+
+(* y aca terminaría el bloque de c), se puede ver que se puede comprar un carrito vacío sin ningún problema.*)
+	print_string "7";
 	print_newline();
 	let s = S.select (fun x -> `Finalizar1 x) s in (* select `Finalizar1 operation *)
 	let s = S.send cat s in
 	let s = S.send carr s in
 
-	print_string "7";
+(* para el b) intentamos pedir luego de finalizar
+
+	let s = S.select (fun x -> `Pedir x) s in (* select `Pedir operation *)
+	let s = S.send (crear_catalogo 10) s in
+	let s = S.send [] s in
+	let pedido2 = [(2,4);(4,3);(5,1)] in
+	let s = S.send pedido2 s in
+
+Si se descomenta este bloque, se puede ver que el código no compila, así que b) también es imposible.
+
+*)
+
+
+	print_string "8";
 
    	match S.branch s with
 	    `Fallo s ->
