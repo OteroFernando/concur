@@ -128,71 +128,53 @@ let rec cobrar catalogo carrito =
 
 
 (* FUNCIONES PRINCIPALES *)
-let rec server s =
+let rec servicio s cat carr =
  	match S.branch s with
   	(* Recibimos catalogo, carrito y pedido. Verificamos que las cantidades del pedido puedan satisfacerse, agregamos esas cantidades al carrito y
   	las quitamos del catalogo. Sino, devolvemos la lista de los elementos del pedido con las cant del catalogo *)
-  	| `Pedir s -> let n, s = S.receive s in
-	       let m, s = S.receive s in
-	       let p, s = S.receive s in
-	       let r = verif_pedido n p in
+  	| `Pedir s -> let p, s = S.receive s in
+	       let r = verif_pedido cat p in
 	       let s = S.send r s in
 	       if r = false then
-		       let s = S.send n s in
-		       (*let s = S.send m s in *)
-		       let s = S.send (devolver_disponibles n p) s in (* devuelvo el catalogo, carrito y la respuesta al pedido erroneo *)
-		       (* enviar s a client() *)
-		       server s
+		       let t = devolver_disponibles cat p in 	
+		       let s = S.send t s in 
+		       servicio s cat carr
 		   else
-		   		let t = restar_en_catalogo n p in
-		   		let s = S.send t s in (* devuelvo el catalogo modificado y el carrito modificado *)
-		        let s = S.send (sumar_en_carrito m p) s in
-		       (* enviar s a client() *)
-		       server s
+		   		let t = restar_en_catalogo cat p in
+		   		let q = sumar_en_carrito carr p in
+		        let s = S.send q s in 	(* Seria mejor un select, xq en este lado del if no necesito mandar nada *)
+		       	servicio s t q
 
 	(* Solicitar multiplica cant * precio para cada elemento del carrito *)
-	| `Solicitar s -> let n, s = S.receive s in
-	       let m, s = S.receive s in
-	       let r = (solicitar n m) in
-	       print_list print_int m;
+	| `Solicitar s -> let r = (solicitar cat carr) in
+	       print_list print_int carr;
+	       print_newline();
 	       print_int r;
-	       server s
+	       print_newline();
+	       servicio s cat carr
 
 	(*la idea es agarrar la lista del carrito y volcarla en el catalogo  *)
-  	| `Abandonar s -> let n, s = S.receive s in
-	       let m, s = S.receive s in
-	       let s = S.send (anular_carrito n m) s in 	(* devuelvo el catalogo completo. Y el carrito vacio?*)
-	       S.close s
+  	| `Abandonar s -> S.close s
 
 	(* quita el elemento pedido del carrito. Si se quieren quitar mas o los mismos elementos que hay, se quita el item *)
-	| `Quitar s -> let n, s = S.receive s in
-	       let m, s = S.receive s in
-	       let q, s = S.receive s in
-	       let s = S.send (devolver_a_catalogo n m q) s in
-	       let s = S.send (quitar_carrito m q) s in
-	       (* enviar s a client() *)
-		    server s
+	| `Quitar s -> let q, s = S.receive s in
+			let cat2 = devolver_a_catalogo cat carr q in
+			let carr2 = quitar_carrito carr q in
+		    servicio s cat2 carr2
 
-	| `Finalizar1 s ->
-	let n, s = S.receive s in
-	let m, s = S.receive s in
-	 	let r = Random.bool () in
+	| `Finalizar1 s -> let r = Random.bool () in
 	       	if r = true then
 	      	    	let s = S.select (fun x -> `Salir x) s in
 	      	    	S.close s
 		    else
 			let s = S.select (fun x -> `Fallo x) s in
-			let s = S.send (-1) s in
-			server s
+			servicio s cat carr
 
-(*	| `Fallo s -> let s = S.send (-1) s in
-	      	    	server s
-*)
-(*	| `Salir  s ->  (* let n, s = S.receive s in
-	       		let m, s = S.receive s in
-			let s = S.send (solicitar n m) s in *)
-			S.close s
-*)
+let server s =
+	let cat = (crear_catalogo 10) in
+	let carr = [] in
+	servicio s cat carr
+
 
 (* aca simulamos el cliente, y hacemos q llame al servidor con los distintos datos "hardcodeados". Como si el cliente lo recibiera de la persona. *)
 let client s =
@@ -201,8 +183,6 @@ let client s =
 	print_newline();
 
 	let s = S.select (fun x -> `Pedir x) s in (* select `Pedir operation *)
-	let s = S.send (crear_catalogo 10) s in
-	let s = S.send [] s in
 	let pedido = [(2,4);(4,3);(5,1)] in
 	let s = S.send pedido s in
 
@@ -211,51 +191,30 @@ let client s =
 	let ok, s = S.receive s in
 	Printf.printf "%B" ok;
 	print_newline();
-	let cat, s = S.receive s in
 	let carr, s = S.receive s in
 
 	print_string "3";
 	print_newline();
 
-(*
-	let cat = (crear_catalogo 10) in
-	let carr = [] in
-*)
-
 	let s = S.select (fun x -> `Quitar x) s in (* select `Quitar operation *)
-	let s = S.send cat s in
-	let s = S.send carr s in
 	let quitar = (5,7) in
 	let s = S.send quitar s in
 
 	print_string "4";
 	print_newline();
-	let cat, s = S.receive s in
-	let carr, s = S.receive s in
-	print_string "5";
-	print_newline();
 
 	let s = S.select (fun x -> `Solicitar x) s in (* select `Solicitar operation *)
-	let s = S.send cat s in
-	let s = S.send carr s in
+	print_string "5";
+	print_newline();
+	let s = S.select (fun x -> `Finalizar1 x) s in (* select `Finalizar1 operation *)
 
 	print_string "6";
 	print_newline();
-	let s = S.select (fun x -> `Finalizar1 x) s in (* select `Finalizar1 operation *)
-	let s = S.send cat s in
-	let s = S.send carr s in
-
-	print_string "7";
-
    	match S.branch s with
 	    `Fallo s ->
-			let _,s = S.receive s in
 			let s = S.select (fun x-> `Abandonar x) s in
-			let s = S.send cat s in
-			let s = S.send carr s in
-			let _,s = S.receive s in
-							S.close s
-			| `Salir s -> S.close s
+			S.close s
+		| `Salir s -> S.close s
 
 
  let _ =
