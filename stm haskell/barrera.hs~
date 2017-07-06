@@ -11,7 +11,7 @@ esperar tope cont rest = do
 	atomically(do
 		a <- readTvar tope;
 		c <- readTvar cont;
-		check(tope < cont && rest = 0);
+		check(tope < cont);
 		cont = writeTvar(c+1)
 		);
 	atomically(
