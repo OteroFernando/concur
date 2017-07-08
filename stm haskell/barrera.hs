@@ -24,7 +24,7 @@ esperar tope cont rest = do
 		do
 		{	
 			a <- readTVar tope;
-			d <- readTVar rest
+			d <- readTVar rest;
 			if d == a-1 
 				then	do{
 				writeTVar cont (0);
