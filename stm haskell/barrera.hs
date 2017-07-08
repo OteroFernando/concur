@@ -6,10 +6,10 @@ import Control.Concurrent.STM
 
 esperar tope cont rest = do
 	atomically(do
-		a <- readTvar tope;
-		c <- readTvar cont;
+		a <- readTVar tope;
+		c <- readTVar cont;
 		check(tope < cont && rest == 0);
-		cont <- writeTvar(c+1)
+		cont <- writeTVar(c+1)
 		);
 	atomically(
 		do
@@ -17,11 +17,11 @@ esperar tope cont rest = do
 		);
 	atomically(
 		do
-			rest <- writeTvar(rest+1)
+			rest <- writeTVar(rest+1)
 			if (rest == a) then
 				do
-				cont <- writeTvar(0)
-				rest <- writeTvar(0)
+				cont <- writeTVar(0)
+				rest <- writeTVar(0)
 			else
 				idle
 		);
