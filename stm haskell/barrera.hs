@@ -40,11 +40,11 @@ esperar tope cont rest = do
 
 
 
-crear n = atomically(do {
+barrera n = atomically(do {
 	v1 <- newTVar 0;
  	v2 <- newTVar 0;
 	esperar n v1 v2 });
 
 main = atomically(do {
 	a <- newTVar 2;
- 	crear a });
+ 	barrera a });
