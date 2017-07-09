@@ -4,7 +4,8 @@ import Control.Concurrent
 import Control.Concurrent.STM
 
 
-esperar tope cont rest = do
+esperar tope cont rest =do{
+
 	atomically(
 		do{
 			a <- readTVar tope;
@@ -34,7 +35,8 @@ esperar tope cont rest = do
 				writeTVar rest (rest+1)
 				}
 		}
-		);
+		)
+		};
 
 
 
