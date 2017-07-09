@@ -4,24 +4,23 @@ import Control.Concurrent
 import Control.Concurrent.STM
 
 
-esperar tope cont rest =do{
-
-	atomically(
+esperar tope cont rest = do{
+--	atomically(
 		do{
 			a <- readTVar tope;
 			c <- readTVar cont;
 			check(tope > cont && rest == 0);
 			writeTVar cont (c+1)
-		}
-		);
-	atomically(
+		};
+--		);
+--	atomically(
 		do{
 			a <- readTVar tope;
 			c <- readTVar cont;
 			check(a == c)
-		}
-		);
-	atomically(
+		};
+--		);
+	--atomically(
 		do
 		{	
 			a <- readTVar tope;
@@ -34,18 +33,18 @@ esperar tope cont rest =do{
 				else	do{
 				writeTVar rest (rest+1)
 				}
-		}
-		)
+		};
+--		)
 		};
 
 
 
 
 
-barrera n = atomically(do {
+barrera n = do {
 	v1 <- newTVar 0;
  	v2 <- newTVar 0;
-	esperar n v1 v2 });
+	esperar n v1 v2 };
 
 main = atomically(do {
 	a <- newTVar 2;
